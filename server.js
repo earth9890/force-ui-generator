@@ -27,7 +27,7 @@ function parseFigmaLink(link) {
 
 
 app.get('/figma-node', async (req, res) => {
-	const { figma_link } = req.query;
+	const { figma_link, minified = 'false' } = req.query;
 
 	if (!figma_link) {
 		return res.status(400).json({ error: 'Missing figma_link query parameter' });
@@ -39,7 +39,7 @@ app.get('/figma-node', async (req, res) => {
 	}
 
 	const { file, node } = parsed;
-	console.log(`Parsed → file: ${file}, node: ${node}`);
+	console.log(`Parsed → file: ${file}, node: ${node}, minified: ${minified}`);
 
 	try {
 		const response = await fetch(
@@ -52,8 +52,6 @@ app.get('/figma-node', async (req, res) => {
 		);
 
 		const data = await response.json();
-		console.log('Figma response:', JSON.stringify(data, null, 2));
-
 		const nodeData = data?.nodes?.[node]?.document;
 
 		if (!nodeData) {
