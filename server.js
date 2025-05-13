@@ -25,6 +25,26 @@ function parseFigmaLink(link) {
 	}
 }
 
+// Prune function: only keep whitelisted keys, recursively on children
+const whitelist = ['id', 'name', 'type', 'componentProperties', 'children'];
+
+function prune(obj) {
+	if (Array.isArray(obj)) {
+		return obj.map(prune);
+	}
+	if (obj !== null && typeof obj === 'object') {
+		const out = {};
+		for (const key of whitelist) {
+			if (key in obj) {
+				// recurse into children arrays
+				out[key] = prune(obj[key]);
+			}
+		}
+		return out;
+	}
+	// primitive → pass through (though none expected outside these keys)
+	return obj;
+}
 
 app.get('/figma-node', async (req, res) => {
 	const { figma_link, minified = 'false' } = req.query;
@@ -58,7 +78,10 @@ app.get('/figma-node', async (req, res) => {
 			return res.status(404).json({ error: 'Node not found in Figma' });
 		}
 
-		return res.json(nodeData);
+		// Prune the response data
+		const slimData = prune(nodeData);
+
+		return res.json(slimData);
 	} catch (err) {
 		console.error('Error:', err);
 		return res.status(500).json({ error: 'Internal Server Error' });
